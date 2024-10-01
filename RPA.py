@@ -34,7 +34,7 @@ def fillData_dropdown(element, inputText):
     dropdown = wait.until(EC.visibility_of_element_located((By.XPATH, "//div[contains(@class, 'el-select-dropdown el-popper') and not(contains(@style, 'display: none'))]")))
     option = wait.until(EC.visibility_of_element_located((By.XPATH, f"//li[@class='el-select-dropdown__item']/span[text()='{inputText}']")))
     action = ActionChains(driver)
-    time.sleep(5)
+    time.sleep(2)
     action.move_to_element(option).click().perform()
     
     
@@ -78,7 +78,7 @@ def fillData_dateandtime(element, inputText):
     action = ActionChains(driver)
     action.move_by_offset(10, 10).click().perform()
 
-
+## 關聯性
 def fillData_autocomplete(element, inputText):
     element.click()
     element.find_element(By.XPATH, './div/textarea').send_keys(inputText)
@@ -90,11 +90,15 @@ def fillData_tag(element, inputText):
     action.send_keys(inputText)
     action.perform()
 
+## 流程人員
 def fillData_people(block, value):
     block.click()
     dropdown_item_xpath = f"//li[contains(@class, 'Dropdown__DropdownListItem-sc-197kf96-7') and text()='{value}']"
     dropdown_item = wait.until(EC.presence_of_element_located((By.XPATH, dropdown_item_xpath)))
     dropdown_item.click()
+
+def fillData_advancedform(element,inputText):
+    element.click()
 
 
 
@@ -140,11 +144,12 @@ def fillForm(formData):
             pattern = r"^第\d+欄$"
             if re.match(pattern, normalized_text):
                 print("Match found")
+                block = element.find_element(By.XPATH, './/span[2]/span[2]')
+                fillData_advancedform(block, formData[normalized_text]) ## 進階表單
             else:
                 if normalized_text in formData.keys():
                     block = element.find_element(By.CLASS_NAME, 'column-content').find_element(By.XPATH, './span[1]/div[1]')
                     block_type = block.get_attribute("class")
-                    print("1")
 
                     if block_type == "el-input bizf-fields-textalign is-left": 
                         fillData_Text(block, formData[normalized_text]) ## 文字
