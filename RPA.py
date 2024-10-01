@@ -10,7 +10,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 import time
 from datetime import datetime, timedelta
 import json
-
+import re
 
 service = Service(ChromeDriverManager().install())
 driver = webdriver.Chrome(service=service)
@@ -137,30 +137,33 @@ def fillForm(formData):
             element_text = element.find_element(By.XPATH, ".").text.strip()  ## 獲取文本
             normalized_text = element_text.splitlines()[0].strip()  # 清理多餘 只取第一
             print(normalized_text)
-
-            if normalized_text in formData.keys():
-                block = element.find_element(By.CLASS_NAME, 'column-content').find_element(By.XPATH, './span[1]/div[1]')
-                block_type = block.get_attribute("class")
-                print("1")
-
-                if block_type == "el-input bizf-fields-textalign is-left": 
-                    fillData_Text(block, formData[normalized_text]) ## 文字
-                elif block_type == 'el-textarea bizf-fields-textalign is-left': 
-                    fillData_multiRowText(block, formData[normalized_text]) ## 多行文字
-                elif block_type == 'normalField normalField-write bizf-fields-textalign is-left':
-                    fillData_number(block, formData[normalized_text]) ## 數字
-                elif block_type == 'el-select bizf-fields-textalign is-left':
-                    fillData_dropdown(block, formData[normalized_text]) ## 下拉選單
-                elif block_type == 'el-radio-group bizf-fields-textalign is-left':
-                    fillData_radiogroup(block, formData[normalized_text]) ## 單選
-                elif block_type == 'el-checkbox-group bizf-fields-textalign is-left': 
-                    fillData_checkboxgroup(block, formData[normalized_text]) ## 多選
-                elif block_type == "el-date-editor el-input el-input--prefix el-input--suffix el-date-editor--date bizf-fields-textalign is-left" or block_type == "el-date-editor el-input el-input--prefix el-input--suffix el-date-editor--datetime bizf-fields-textalign is-left":
-                    fillData_dateandtime(block, formData[normalized_text]) ## 日期與時間
-                elif block_type == 'el-autocomplete bizf-fields-textalign is-left':
-                    fillData_autocomplete(block, formData[normalized_text]) ## 關聯性
+            pattern = r"^第\d+欄$"
+            if re.match(pattern, normalized_text):
+                print("Match found")
             else:
-                continue        
+                if normalized_text in formData.keys():
+                    block = element.find_element(By.CLASS_NAME, 'column-content').find_element(By.XPATH, './span[1]/div[1]')
+                    block_type = block.get_attribute("class")
+                    print("1")
+
+                    if block_type == "el-input bizf-fields-textalign is-left": 
+                        fillData_Text(block, formData[normalized_text]) ## 文字
+                    elif block_type == 'el-textarea bizf-fields-textalign is-left': 
+                        fillData_multiRowText(block, formData[normalized_text]) ## 多行文字
+                    elif block_type == 'normalField normalField-write bizf-fields-textalign is-left':
+                        fillData_number(block, formData[normalized_text]) ## 數字
+                    elif block_type == 'el-select bizf-fields-textalign is-left':
+                        fillData_dropdown(block, formData[normalized_text]) ## 下拉選單
+                    elif block_type == 'el-radio-group bizf-fields-textalign is-left':
+                        fillData_radiogroup(block, formData[normalized_text]) ## 單選
+                    elif block_type == 'el-checkbox-group bizf-fields-textalign is-left': 
+                        fillData_checkboxgroup(block, formData[normalized_text]) ## 多選
+                    elif block_type == "el-date-editor el-input el-input--prefix el-input--suffix el-date-editor--date bizf-fields-textalign is-left" or block_type == "el-date-editor el-input el-input--prefix el-input--suffix el-date-editor--datetime bizf-fields-textalign is-left":
+                        fillData_dateandtime(block, formData[normalized_text]) ## 日期與時間
+                    elif block_type == 'el-autocomplete bizf-fields-textalign is-left':
+                        fillData_autocomplete(block, formData[normalized_text]) ## 關聯性
+                else:
+                    continue        
         except Exception as e:
             print(e)
             continue
