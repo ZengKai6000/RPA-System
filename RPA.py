@@ -17,16 +17,19 @@ driver = webdriver.Chrome(service=service)
 driver.set_window_size(800, 700) 
 wait = WebDriverWait(driver, 30)
 
+
 ## 文字
 def fillData_Text(element, inputText):
     element.click()
     element.find_element(By.XPATH, './input').send_keys(inputText)
+
 
 ## 多行文字
 def fillData_multiRowText(element, inputText):
     element.click()
     element.find_element(By.XPATH, './textarea[1]').send_keys(inputText)
   
+
 ## 下拉選單
 def fillData_dropdown(element, inputText):
     element.click()
@@ -37,7 +40,6 @@ def fillData_dropdown(element, inputText):
     time.sleep(2)
     action.move_to_element(option).click().perform()
     
-    
 
 ## 數字
 def fillData_number(element, inputText):
@@ -45,6 +47,7 @@ def fillData_number(element, inputText):
     action = ActionChains(driver)
     action.send_keys(inputText)
     action.perform()
+
 
 ## 單選
 def fillData_radiogroup(element, inputText):
@@ -57,6 +60,7 @@ def fillData_radiogroup(element, inputText):
             label.click()
             break
        
+
 ## 多選
 def fillData_checkboxgroup(element, inputText):
     if isinstance(inputText, str):
@@ -71,6 +75,7 @@ def fillData_checkboxgroup(element, inputText):
                 label.click()
                 break  
 
+
 ## 時間
 def fillData_dateandtime(element, inputText):
     element.click()
@@ -78,10 +83,12 @@ def fillData_dateandtime(element, inputText):
     action = ActionChains(driver)
     action.move_by_offset(10, 10).click().perform()
 
+
 ## 關聯性
 def fillData_autocomplete(element, inputText):
     element.click()
     element.find_element(By.XPATH, './div/textarea').send_keys(inputText)
+
 
 ## 標籤
 def fillData_tag(element, inputText):
@@ -90,6 +97,7 @@ def fillData_tag(element, inputText):
     action.send_keys(inputText)
     action.perform()
 
+
 ## 流程人員
 def fillData_people(block, value):
     block.click()
@@ -97,8 +105,55 @@ def fillData_people(block, value):
     dropdown_item = wait.until(EC.presence_of_element_located((By.XPATH, dropdown_item_xpath)))
     dropdown_item.click()
 
+## 進階表單 文字
+def fillData_advancedform_input(element,inputText):
+    element.cilck()
+
+## 進階表單ing
 def fillData_advancedform(element,inputText):
     element.click()
+
+    num = 2
+    for i, text in enumerate(inputText):  # 遍歷 inputText 列表
+        while num >= 1:
+            try:
+                # 查找表單中的格子
+                site = wait.until(EC.presence_of_element_located(
+                    (By.XPATH, '//*[@id="app"]/div[2]/div/div[2]/div[%d]/div/span[2]/div' % num)))
+                num += 1  # 更新 num
+
+                site_type = site.get_attribute("class")  # 獲取格子的 class 類型
+                if site_type == 'el-input':
+                    fillData_advancedform_input(site, inputText)
+            except:
+                continue
+    while num > 1:
+        try:
+            num += 1
+            site =  wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="app"]/div[2]/div/div[2]/div[%d]/div/span[2]/div' %num)))
+            site_type = site.get_attribute("class")
+
+            if site_type == 'el-input': ##文字、網址
+                fillData_advancedform_input(site, inputText)
+            #elif site_type == 'el-date-editor el-input el-input--prefix el-input--suffix el-date-editor--datetime' or site_type == 'el-date-editor el-input el-input--prefix el-input--suffix el-date-editor--date': ##日期與時間
+
+            #elif site_type == 'el-radio-group': ##單選(資料集)、單選
+
+            #elif site_type == 'el-checkbox-group': ##多選(資料集)、多選
+
+            #elif site_type == 'el-select': ##下拉(資料集)
+
+            #elif site_type == 'el-textarea': ##多行文字
+
+            #elif site_type == 'normalField normalField-write': ##數字
+
+            #elif site_type == 'el-select': ##下拉選單
+
+
+        except:
+            continue
+
+    
 
 
 
