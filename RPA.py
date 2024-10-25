@@ -115,37 +115,45 @@ def fillData_advancedform_input(element,inputText):
 ## 進階表單ing
 def fillData_advancedform(element,inputText):
     element.click()
+    time.sleep(2)
 
-    num = 2
-
+    num = 1
 
     ##未測
-    for text in enumerate(inputText):  # 遍歷 inputText 列表
-        while num > 1:
+    for text in inputText:  # 遍歷 inputText 列表
+        while num > 0:
             try:
                 num += 1
                 site =  wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="app"]/div[2]/div/div[2]/div[%d]/div/span[2]/div' %num)))
                 site_type = site.get_attribute("class")
+                
 
                 if site_type == 'el-input': ##文字、網址
                     fillData_Text(site, text)#未測
-                #elif site_type == 'el-date-editor el-input el-input--prefix el-input--suffix el-date-editor--datetime' or site_type == 'el-date-editor el-input el-input--prefix el-input--suffix el-date-editor--date': ##日期與時間
-
-                #elif site_type == 'el-radio-group': ##單選(資料集)、單選
-
-                #elif site_type == 'el-checkbox-group': ##多選(資料集)、多選
-
-                #elif site_type == 'el-select': ##下拉(資料集)
-
-                #elif site_type == 'el-textarea': ##多行文字
-
-                #elif site_type == 'normalField normalField-write': ##數字
-
-                #elif site_type == 'el-select': ##下拉選單
-
-
+                    break
+                elif site_type == 'el-date-editor el-input el-input--prefix el-input--suffix el-date-editor--datetime' or site_type == 'el-date-editor el-input el-input--prefix el-input--suffix el-date-editor--date': ##日期與時間
+                    fillData_dateandtime(site, text)
+                    break
+                elif site_type == 'el-radio-group': ##單選(資料集)、單選
+                    fillData_radiogroup(site, text)
+                    break
+                elif site_type == 'el-checkbox-group': ##多選(資料集)、多選
+                    fillData_checkboxgroup(site, text)
+                    break
+                elif site_type == 'el-select': ##下拉(資料集)
+                    fillData_dropdown(site, text)
+                    break
+                elif site_type == 'el-textarea': ##多行文字
+                    fillData_multiRowText(site, text)
+                    break
+                elif site_type == 'normalField normalField-write': ##數字
+                    fillData_number(site, text)
+                    break
             except:
                 continue
+    button = driver.find_element(By.XPATH, "//button[@class='editBtn' and contains(text(),'完成')]")
+    button.click()
+    
 
     
 
@@ -191,10 +199,12 @@ def fillForm(formData):
             normalized_text = element_text.splitlines()[0].strip()  # 清理多餘 只取第一
             print(normalized_text)
             pattern = r"^第\d+欄$"
+
             if re.match(pattern, normalized_text):
                 print("Match found")
                 block = element.find_element(By.XPATH, './/span[2]/span[2]')
                 fillData_advancedform(block, formData[normalized_text]) ## 進階表單
+                continue
             else:
                 if normalized_text in formData.keys():
                     block = element.find_element(By.CLASS_NAME, 'column-content').find_element(By.XPATH, './span[1]/div[1]')
