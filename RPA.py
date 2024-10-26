@@ -15,7 +15,7 @@ import re
 service = Service(ChromeDriverManager().install())
 driver = webdriver.Chrome(service=service)
 driver.set_window_size(800, 700) 
-wait = WebDriverWait(driver, 30)
+wait = WebDriverWait(driver, 5)
 
 
 ## 文字
@@ -102,57 +102,62 @@ def fillData_tag(element, inputText):
 
 
 ## 流程人員
-def fillData_people(block, value):
+def fillData_people(block, value, idx):
     block.click()
-    dropdown_item_xpath = f"//li[contains(@class, 'Dropdown__DropdownListItem-sc-197kf96-7') and text()='{value}']"
-    dropdown_item = wait.until(EC.presence_of_element_located((By.XPATH, dropdown_item_xpath)))
+    action = ActionChains(driver)
+    action.send_keys(value)
+    action.perform()
+    dropdown_item = driver.find_elements(By.XPATH, "/html/body/*/div/div/div/ul/li[2]")[idx]
     dropdown_item.click()
+    #dropdown_item_xpath = f"//li[contains(@class, 'Dropdown__DropdownListItem-sc-197kf96-7') and text()='{value}']"
+    #dropdown_item = wait.until(EC.presence_of_element_located((By.XPATH, dropdown_item_xpath)))
+    #dropdown_item.click()
 
 ## 進階表單 文字
 def fillData_advancedform_input(element,inputText):
     element.cilck()
 
 ## 進階表單ing
-def fillData_advancedform(element,inputText):
-    element.click()
-    time.sleep(2)
-
-    num = 1
-
-    ##未測
-    for text in inputText:  # 遍歷 inputText 列表
-        while num > 0:
+def fillData_advancedform(idx,inputList):
+    for column_idx , column_item in enumerate(inputList):
+        if column_idx > 0:
+            element = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="app"]/div[1]/div[%d]/div[%d]/button' %(idx,column_idx+1))))
+            element.click()
+        element = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="app"]/div[1]/div[%d]/div[%d]/div/div[1]/span[2]/span[2]' %(idx,column_idx+1))))
+        element.click()
+        num = 1
+        column = 1
+        while column>0:
             try:
-                num += 1
-                site =  wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="app"]/div[2]/div/div[2]/div[%d]/div/span[2]/div' %num)))
-                site_type = site.get_attribute("class")
-                
+                column += 1
+                element = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="app"]/div[2]/div/div[2]/div[%d]' %column)))
+                element_text = element.find_element(By.XPATH, ".").text.strip()  ## 獲取文本
+                normalized_text = element_text.split(" ")[0]
 
-                if site_type == 'el-input': ##文字、網址
-                    fillData_Text(site, text)#未測
-                    break
-                elif site_type == 'el-date-editor el-input el-input--prefix el-input--suffix el-date-editor--datetime' or site_type == 'el-date-editor el-input el-input--prefix el-input--suffix el-date-editor--date': ##日期與時間
-                    fillData_dateandtime(site, text)
-                    break
-                elif site_type == 'el-radio-group': ##單選(資料集)、單選
-                    fillData_radiogroup(site, text)
-                    break
-                elif site_type == 'el-checkbox-group': ##多選(資料集)、多選
-                    fillData_checkboxgroup(site, text)
-                    break
-                elif site_type == 'el-select': ##下拉(資料集)
-                    fillData_dropdown(site, text)
-                    break
-                elif site_type == 'el-textarea': ##多行文字
-                    fillData_multiRowText(site, text)
-                    break
-                elif site_type == 'normalField normalField-write': ##數字
-                    fillData_number(site, text)
-                    break
-            except:
-                continue
-    button = driver.find_element(By.XPATH, "//button[@class='editBtn' and contains(text(),'完成')]")
-    button.click()
+                if normalized_text in column_item.keys():
+                    num += 1
+                    site =  wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="app"]/div[2]/div/div[2]/div[%d]/div/span[2]/div' %num)))
+                    site_type = site.get_attribute("class")
+                    if site_type == 'el-input': ##文字、網址
+                        fillData_Text(site, column_item[normalized_text])#未測
+                    elif site_type == 'el-date-editor el-input el-input--prefix el-input--suffix el-date-editor--datetime' or site_type == 'el-date-editor el-input el-input--prefix el-input--suffix el-date-editor--date': ##日期與時間
+                        fillData_dateandtime(site, column_item[normalized_text])
+                    elif site_type == 'el-radio-group': ##單選(資料集)、單選
+                        fillData_radiogroup(site, column_item[normalized_text])
+                    elif site_type == 'el-checkbox-group': ##多選(資料集)、多選
+                        fillData_checkboxgroup(site, column_item[normalized_text])
+                    elif site_type == 'el-select': ##下拉(資料集)
+                        fillData_dropdown(site, column_item[normalized_text])
+                    elif site_type == 'el-textarea': ##多行文字
+                        fillData_multiRowText(site, column_item[normalized_text])
+                    elif site_type == 'normalField normalField-write': ##數字
+                        fillData_number(site, column_item[normalized_text])
+            except Exception as e:
+                button = driver.find_element(By.XPATH, "//button[@class='editBtn' and contains(text(),'完成')]")
+                button.click()
+                break
+    
+        
     
 
     
@@ -166,29 +171,21 @@ def initialization():
     driver.find_element(By.ID, "password").send_keys('intern@42838254')
     login_button = driver.find_element(By.XPATH, "//button[@type='submit' and text()='登入']")
     login_button.click()
-    attempts = 0
-    max_attempts = 3       
-    while attempts < max_attempts:
-        try:
-            fill_form_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@type='button']")))
-            driver.execute_script("arguments[0].scrollIntoView();", fill_form_button)
-            fill_form_button.click()
-            break 
-        except Exception as e:
-            attempts += 1
-            if attempts == max_attempts:
-                raise  
-    all_forms_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//span[contains(text(), '全部表單樣板')]")))
-    all_forms_button.click()
 
 def fillForm(formData):
     try:
+        fill_form_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@type='button']")))
+        driver.execute_script("arguments[0].scrollIntoView();", fill_form_button)
+        fill_form_button.click()
+        all_forms_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//span[contains(text(), '全部表單樣板')]")))
+        all_forms_button.click()
         leave_form_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//div[@title='%s' and contains(text(), '%s')]" %(formData["Title"], formData["Title"]))))
         leave_form_button.click()
     except:
         pass
     ## Loop through dictionary to fill the data
     idx = 2
+    counter = 0
     while idx>0:
         try:
             idx += 1
@@ -202,9 +199,8 @@ def fillForm(formData):
 
             if re.match(pattern, normalized_text):
                 print("Match found")
-                block = element.find_element(By.XPATH, './/span[2]/span[2]')
-                fillData_advancedform(block, formData[normalized_text]) ## 進階表單
-                continue
+                fillData_advancedform(idx, formData[f"AdvancedForm{counter}"]) ## 進階表單
+                counter += 1
             else:
                 if normalized_text in formData.keys():
                     block = element.find_element(By.CLASS_NAME, 'column-content').find_element(By.XPATH, './span[1]/div[1]')
@@ -225,12 +221,10 @@ def fillForm(formData):
                     elif block_type == "el-date-editor el-input el-input--prefix el-input--suffix el-date-editor--date bizf-fields-textalign is-left" or block_type == "el-date-editor el-input el-input--prefix el-input--suffix el-date-editor--datetime bizf-fields-textalign is-left":
                         fillData_dateandtime(block, formData[normalized_text]) ## 日期與時間
                     elif block_type == 'el-autocomplete bizf-fields-textalign is-left':
-                        fillData_autocomplete(block, formData[normalized_text]) ## 關聯性
-                else:
-                    continue        
+                        fillData_autocomplete(block, formData[normalized_text]) ## 關聯性       
         except Exception as e:
             print(e)
-            continue
+            break
 
     
     idy = 1
@@ -259,9 +253,8 @@ def fillForm(formData):
         except Exception as e:
             print(e)
             break
-    
-    idz = 0
-    while idz == 0:
+
+    while True:
         try:
             element_2 = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="FormEditor"]/div/div/div/div/div[3]')))
             element_2_text = element_2.find_element(By.XPATH, ".").text.strip()
@@ -272,32 +265,42 @@ def fillForm(formData):
 
             numbers = [line.split("第")[1].split("關")[0] for line in matching_lines if "第" in line and "關" in line]
 
-            for number in numbers:
-                try:
-                    block_2 = element_2.find_element(By.XPATH, f'./div[{number}]/div[2]/div/div/div/div/div')
-                    fillData_people(block_2, formData['第%d關' %int(number)])
-                except NoSuchElementException:
-                    print(f'No element found for 第{number}關')
-
+            for idx, number in enumerate(numbers):
+                block_2 = element_2.find_element(By.XPATH, f'./div[{number}]/div[2]/div/div/div/div/div')
+                fillData_people(block_2, formData['第%d關' %int(number)], idx)
+            break
         except Exception as e:
             print(e)
             break
+            
 
-        
-
-
-
+def sent():
+    try:
+        # Wait until the logout button is present
+        sent_btn = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="FormEditor"]/header/div[2]/button[3]')))
+        sent_btn.click()
+        time.sleep(10)
+        back_btn = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="wrapper"]/div[3]/div/main/div[1]/div[1]')))
+        back_btn.click()
+    except Exception:
+        time.sleep(5)
+        cancel_btn = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="FormEditor"]/header/div[2]/button[2]')))
+        cancel_btn.click()
+        print("Logout button not found or took too long to appear.")
 
 def logout():
     try:
         # Wait until the logout button is present
-        logout_button = wait.until(
-            EC.presence_of_element_located((By.XPATH, '//*[@id="FormEditor"]/header/div[2]/button[3]/div'))
-        )
-        # Click on the logout button
-        logout_button.click()
-    except TimeoutException:
+        avatar_btn = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="wrapper"]/div[3]/div[2]/header/div/div[2]/span[3]/div')))
+        avatar_btn.click()
+        logout_btn = wait.until(EC.presence_of_element_located((By.XPATH, '/html/body/div[2]/div/div/div/div[4]/div')))
+        logout_btn.click()
+        time.sleep(5)
+        alert = driver.switch_to.alert
+        alert.accept()
+    except Exception:
         print("Logout button not found or took too long to appear.")
+
 
 
 
@@ -305,10 +308,15 @@ def main(demandList):
     initialization()
     for i in demandList:
         fillForm(i)
+        sent()
     logout()
 
 if __name__ == '__main__':
-    demandList = [
+    demandList = [{
+        "Title": "RPA測試表單",
+        "文字": "123",
+        "多行文字": "456"
+    },
     {
         "Title": "RPA測試表單",
         "文字": "賴逸庭",
@@ -326,16 +334,19 @@ if __name__ == '__main__':
         "單選資料集": "200:5A",
         "多選資料集": ["th.chu_0901429403", "jw.lin_0901429431"],
         "關聯表單":"(主)今時科技派工表單",
-        "第1欄":["批次生產", ["業務協助","整案合作"], "彭正鎧", "2021/08/05 17:23","2021/08/05","文字","這是多行\n1\n2\n3\n4","123","https://faq.vitalyun.com/faq/TW/BizForm","下拉1","單選1",["多選1","多選2"]],
-        "第2欄":["三段式", ["業務協助","工務協助","整案合作"], "蔡坤霖", "2021/10/08 17:23","2021/10/08","文字","這是多行\n1\n2\n3\n4","123","https://faq.vitalyun.com/faq/TW/BizForm","下拉2","單選3",["多選1","多選2","多選3"]],
+        "AdvancedForm0":[
+            {"單選(資料集)" :"批次生產", "多選(資料集)" :["業務協助","整案合作"], "下拉(資料集)" :"彭正鎧", "日期與時間1" :"2021/08/05 17:23", "日期1" :"2021/08/05", "文字1" :"文字", "多行文字1" :"這是多行\n1\n2\n3\n4", "數字1" :"123", "網址1" :"https://faq.vitalyun.com/faq/TW/BizForm", "下拉選單1" :"下拉1", "單選1" :"單選1", "多選1" :["多選1","多選2"]},
+            {"單選(資料集)" :"三段式", "多選(資料集)" :["業務協助","工務協助","整案合作"], "下拉(資料集)" :"蔡坤霖", "日期與時間1" :"2021/10/08 17:23", "日期1" :"2021/10/08", "文字1" :"文字", "多行文字1" :"這是多行\n1\n2\n3\n4", "數字1" :"123", "網址1" :"https://faq.vitalyun.com/faq/TW/BizForm", "下拉選單1" :"下拉2", "單選1" :"單選3", "多選1" :["多選1","多選2","多選3"]}
+        ],
+        "AdvancedForm1":[
+            {"單選2" :"彭正鎧", "文字2" :"文字1", "日期2" :"2021/08/05"},
+            {"單選2" :"YS", "文字2" :"文字2", "日期2" :""},
+            {"單選2" :"Hill", "日期2" :"2021/08/07"}
+        ],
         "標籤": "標籤1",
         "第3關":"Luo, You-Siang",
         "第4關":"Luo, You-Siang",
-    },
-    {
-        "Title": "RPA測試表單",
-        "文字": "123",
-        "多行文字": "456"
-    }
-    ]
+    }]
+   
+    
     main(demandList)
