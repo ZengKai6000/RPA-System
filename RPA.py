@@ -1,21 +1,18 @@
 from selenium import webdriver
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import NoSuchElementException, TimeoutException
-from selenium.webdriver.common.keys import Keys
+from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.support.ui import WebDriverWait, Select
+from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 import time
-from datetime import datetime, timedelta
-import json
 import re
 
 service = Service(ChromeDriverManager().install())
 driver = webdriver.Chrome(service=service)
 driver.set_window_size(800, 700) 
-wait = WebDriverWait(driver, 5)
+wait = WebDriverWait(driver, 30)
 
 
 ## 文字
@@ -109,9 +106,7 @@ def fillData_people(block, value, idx):
     action.perform()
     dropdown_item = driver.find_elements(By.XPATH, "/html/body/*/div/div/div/ul/li[2]")[idx]
     dropdown_item.click()
-    #dropdown_item_xpath = f"//li[contains(@class, 'Dropdown__DropdownListItem-sc-197kf96-7') and text()='{value}']"
-    #dropdown_item = wait.until(EC.presence_of_element_located((By.XPATH, dropdown_item_xpath)))
-    #dropdown_item.click()
+    
 
 ## 進階表單 文字
 def fillData_advancedform_input(element,inputText):
