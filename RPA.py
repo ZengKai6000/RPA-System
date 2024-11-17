@@ -8,12 +8,14 @@ from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 import time
 import re
+import json
 
 service = Service(ChromeDriverManager().install())
 driver = webdriver.Chrome(service=service)
 driver.set_window_size(800, 700) 
 wait = WebDriverWait(driver, 30)
-
+with open("Test.json", "r", encoding="utf-8") as file:
+    data = json.load(file)
 
 ## 文字
 def fillData_Text(element, inputText):
@@ -35,7 +37,7 @@ def fillData_dropdown(element, inputText):
     element.click()
     option = wait.until(EC.visibility_of_element_located((By.XPATH, f"//li[@class='el-select-dropdown__item']/span[text()='{inputText}']")))
     action = ActionChains(driver)
-    time.sleep(1)
+    time.sleep(0.5)
     action.move_to_element(option).click().perform()
     
 
@@ -108,9 +110,6 @@ def fillData_people(block, value, idx):
     dropdown_item.click()
     
 
-## 進階表單 文字
-def fillData_advancedform_input(element,inputText):
-    element.cilck()
 
 ## 進階表單ing
 def fillData_advancedform(idx,inputList):
@@ -131,10 +130,11 @@ def fillData_advancedform(idx,inputList):
 
                 if normalized_text in column_item.keys():
                     num += 1
+                    time.sleep(0.5)
                     site =  wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="app"]/div[2]/div/div[2]/div[%d]/div/span[2]/div' %num)))
                     site_type = site.get_attribute("class")
                     if site_type == 'el-input': ##文字、網址
-                        fillData_Text(site, column_item[normalized_text])#未測
+                        fillData_Text(site, column_item[normalized_text])
                     elif site_type == 'el-date-editor el-input el-input--prefix el-input--suffix el-date-editor--datetime' or site_type == 'el-date-editor el-input el-input--prefix el-input--suffix el-date-editor--date': ##日期與時間
                         fillData_dateandtime(site, column_item[normalized_text])
                     elif site_type == 'el-radio-group': ##單選(資料集)、單選
@@ -172,35 +172,30 @@ def fillForm(formData):
         fill_form_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@type='button']")))
         driver.execute_script("arguments[0].scrollIntoView();", fill_form_button)
         fill_form_button.click()
-        all_forms_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//span[contains(text(), '全部表單樣板')]")))
+        all_forms_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//span[contains(text(), '全部表單樣板')]")))#分類
         all_forms_button.click()
         leave_form_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//div[@title='%s' and contains(text(), '%s')]" %(formData["Title"], formData["Title"]))))
         leave_form_button.click()
     except:
+        print("沒有正確進入表單")
         pass
-    ## Loop through dictionary to fill the data
     idx = 2
     counter = 0
     while idx>0:
         try:
             idx += 1
             element = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="app"]/div[1]/div[%d]' %idx)))
-            print(idx)
-
             element_text = element.find_element(By.XPATH, ".").text.strip()  ## 獲取文本
             normalized_text = element_text.splitlines()[0].strip()  # 清理多餘 只取第一
-            print(normalized_text)
             pattern = r"^第\d+欄$"
 
             if re.match(pattern, normalized_text):
-                print("Match found")
                 fillData_advancedform(idx, formData[f"AdvancedForm{counter}"]) ## 進階表單
                 counter += 1
             else:
                 if normalized_text in formData.keys():
                     block = element.find_element(By.CLASS_NAME, 'column-content').find_element(By.XPATH, './span[1]/div[1]')
                     block_type = block.get_attribute("class")
-
                     if block_type == "el-input bizf-fields-textalign is-left": 
                         fillData_Text(block, formData[normalized_text]) ## 文字
                     elif block_type == 'el-textarea bizf-fields-textalign is-left': 
@@ -307,41 +302,6 @@ def main(demandList):
     logout()
 
 if __name__ == '__main__':
-    demandList = [{
-        "Title": "RPA測試表單",
-        "文字": "123",
-        "多行文字": "456"
-    },
-    {
-        "Title": "RPA測試表單",
-        "文字": "賴逸庭",
-        "文字填寫規則（電話）": "0909430046",
-        "多行文字": "這是多行\n1\n2\n3\n4",
-        "數字": "10",
-        "網址": "https://faq.vitalyun.com/faq/TW/BizForm",
-        "下拉選單": "選項1",
-        "單選": "單選1",
-        "多選": ["多選1", "多選2"],
-        "日期": "2021/08/05",
-        "日期與時間": "2021/08/05 17:23",
-        "API關聯欄位":"(主) / ",
-        "下拉選單資料集": "251231101_安泰登峰",
-        "單選資料集": "200:5A",
-        "多選資料集": ["th.chu_0901429403", "jw.lin_0901429431"],
-        "關聯表單":"(主)今時科技派工表單",
-        "AdvancedForm0":[
-            {"單選(資料集)" :"批次生產", "多選(資料集)" :["業務協助","整案合作"], "下拉(資料集)" :"彭正鎧", "日期與時間1" :"2021/08/05 17:23", "日期1" :"2021/08/05", "文字1" :"文字", "多行文字1" :"這是多行\n1\n2\n3\n4", "數字1" :"123", "網址1" :"https://faq.vitalyun.com/faq/TW/BizForm", "下拉選單1" :"下拉1", "單選1" :"單選1", "多選1" :["多選1","多選2"]},
-            {"單選(資料集)" :"三段式", "多選(資料集)" :["業務協助","工務協助","整案合作"], "下拉(資料集)" :"蔡坤霖", "日期與時間1" :"2021/10/08 17:23", "日期1" :"2021/10/08", "文字1" :"文字", "多行文字1" :"這是多行\n1\n2\n3\n4", "數字1" :"123", "網址1" :"https://faq.vitalyun.com/faq/TW/BizForm", "下拉選單1" :"下拉2", "單選1" :"單選3", "多選1" :["多選1","多選2","多選3"]}
-        ],
-        "AdvancedForm1":[
-            {"單選2" :"彭正鎧", "文字2" :"文字1", "日期2" :"2021/08/05"},
-            {"單選2" :"YS", "文字2" :"文字2", "日期2" :""},
-            {"單選2" :"Hill", "日期2" :"2021/08/07"}
-        ],
-        "標籤": "標籤1",
-        "第3關":"Luo, You-Siang",
-        "第4關":"Luo, You-Siang",
-    }]
-   
+    demandList = data
     
     main(demandList)
