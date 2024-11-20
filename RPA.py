@@ -1,5 +1,6 @@
 from selenium import webdriver
 from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.chrome.service import Service
@@ -14,24 +15,18 @@ service = Service(ChromeDriverManager().install())
 driver = webdriver.Chrome(service=service)
 driver.set_window_size(800, 700) 
 wait = WebDriverWait(driver, 30)
+shortwait = WebDriverWait(driver, 2)
 with open("Test.json", "r", encoding="utf-8") as file:
     data = json.load(file)
 
-## 文字
+## 文字 ## 多行文字 ## 數字 ## 關聯性
 def fillData_Text(element, inputText):
     element.click()
     action = ActionChains(driver)
     action.send_keys(inputText)
     action.perform()
 
-## 多行文字
-def fillData_multiRowText(element, inputText):
-    element.click()
-    action = ActionChains(driver)
-    action.send_keys(inputText)
-    action.perform()
   
-
 ## 下拉選單
 def fillData_dropdown(element, inputText):
     element.click()
@@ -40,14 +35,6 @@ def fillData_dropdown(element, inputText):
     time.sleep(0.5)
     action.move_to_element(option).click().perform()
     
-
-## 數字
-def fillData_number(element, inputText):
-    element.click()
-    action = ActionChains(driver)
-    action.send_keys(inputText)
-    action.perform()
-
 
 ## 單選
 def fillData_radiogroup(element, inputText):
@@ -84,19 +71,12 @@ def fillData_dateandtime(element, inputText):
     action.move_by_offset(10, 10).click().perform()
 
 
-## 關聯性
-def fillData_autocomplete(element, inputText):
-    element.click()
-    action = ActionChains(driver)
-    action.send_keys(inputText)
-    action.perform()
-
-
 ## 標籤
 def fillData_tag(element, inputText):
     element.click()
     action = ActionChains(driver)
     action.send_keys(inputText)
+    action.send_keys(Keys.RETURN)
     action.perform()
 
 
@@ -111,8 +91,9 @@ def fillData_people(block, value, idx):
     
 
 
-## 進階表單ing
+## 進階表單
 def fillData_advancedform(idx,inputList):
+    time.sleep(0.5)
     for column_idx , column_item in enumerate(inputList):
         if column_idx > 0:
             element = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="app"]/div[1]/div[%d]/div[%d]/button' %(idx,column_idx+1))))
@@ -124,7 +105,7 @@ def fillData_advancedform(idx,inputList):
         while column>0:
             try:
                 column += 1
-                element = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="app"]/div[2]/div/div[2]/div[%d]' %column)))
+                element = shortwait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="app"]/div[2]/div/div[2]/div[%d]' %column)))
                 element_text = element.find_element(By.XPATH, ".").text.strip()  ## 獲取文本
                 normalized_text = element_text.split(" ")[0]
 
@@ -133,7 +114,7 @@ def fillData_advancedform(idx,inputList):
                     time.sleep(0.5)
                     site =  wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="app"]/div[2]/div/div[2]/div[%d]/div/span[2]/div' %num)))
                     site_type = site.get_attribute("class")
-                    if site_type == 'el-input': ##文字、網址
+                    if site_type == 'el-input' or site_type == 'el-textarea' or site_type == 'normalField normalField-write': ##文字、網址、多行文字、數字
                         fillData_Text(site, column_item[normalized_text])
                     elif site_type == 'el-date-editor el-input el-input--prefix el-input--suffix el-date-editor--datetime' or site_type == 'el-date-editor el-input el-input--prefix el-input--suffix el-date-editor--date': ##日期與時間
                         fillData_dateandtime(site, column_item[normalized_text])
@@ -143,21 +124,12 @@ def fillData_advancedform(idx,inputList):
                         fillData_checkboxgroup(site, column_item[normalized_text])
                     elif site_type == 'el-select': ##下拉(資料集)
                         fillData_dropdown(site, column_item[normalized_text])
-                    elif site_type == 'el-textarea': ##多行文字
-                        fillData_multiRowText(site, column_item[normalized_text])
-                    elif site_type == 'normalField normalField-write': ##數字
-                        fillData_number(site, column_item[normalized_text])
+                    
             except Exception as e:
                 button = driver.find_element(By.XPATH, "//button[@class='editBtn' and contains(text(),'完成')]")
                 button.click()
                 break
     
-        
-    
-
-    
-
-
 
 def initialization():
     url = "https://member.gsscloud.com/cas/login?service=https%3A%2F%2Fbizform.vitalyun.com%2FBackend%2Fsignin-cas%3Fstate%3DlsQ85OqVxz1o1K20PJGrEsFlxUmIiFY0WROZWrfEUWByJmNwu9TKZk2dslBGW9-Jc0mLqStzLiTT-nglYmUWvdLDj4TCEd_524UohEFd0jCBfbFNkneQW0tNMLjDjuSnKJUZ_0neWtOrhy3bxhQWJHhzpffyPSZ5kB6prJZy-W3mbygDxs0rJiEallX_BxNkK1ey5AqxNiSJ65fOdrZ9r9KyRgvGUNc7KJxFc_4CDVw"
@@ -172,8 +144,13 @@ def fillForm(formData):
         fill_form_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@type='button']")))
         driver.execute_script("arguments[0].scrollIntoView();", fill_form_button)
         fill_form_button.click()
-        all_forms_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//span[contains(text(), '全部表單樣板')]")))#分類
+        all_forms_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//span[contains(text(), '全部表單樣板')]")))
         all_forms_button.click()
+        search_element = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="searchInput"]')))
+        search_element.click()
+        action = ActionChains(driver) 
+        action.send_keys(formData['Title']) #搜尋解決掃不到資料的錯誤
+        action.perform()
         leave_form_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//div[@title='%s' and contains(text(), '%s')]" %(formData["Title"], formData["Title"]))))
         leave_form_button.click()
     except:
@@ -184,7 +161,7 @@ def fillForm(formData):
     while idx>0:
         try:
             idx += 1
-            element = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="app"]/div[1]/div[%d]' %idx)))
+            element = shortwait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="app"]/div[1]/div[%d]' %idx)))
             element_text = element.find_element(By.XPATH, ".").text.strip()  ## 獲取文本
             normalized_text = element_text.splitlines()[0].strip()  # 清理多餘 只取第一
             pattern = r"^第\d+欄$"
@@ -196,12 +173,8 @@ def fillForm(formData):
                 if normalized_text in formData.keys():
                     block = element.find_element(By.CLASS_NAME, 'column-content').find_element(By.XPATH, './span[1]/div[1]')
                     block_type = block.get_attribute("class")
-                    if block_type == "el-input bizf-fields-textalign is-left": 
-                        fillData_Text(block, formData[normalized_text]) ## 文字
-                    elif block_type == 'el-textarea bizf-fields-textalign is-left': 
-                        fillData_multiRowText(block, formData[normalized_text]) ## 多行文字
-                    elif block_type == 'normalField normalField-write bizf-fields-textalign is-left':
-                        fillData_number(block, formData[normalized_text]) ## 數字
+                    if block_type == "el-input bizf-fields-textalign is-left" or block_type == "el-textarea bizf-fields-textalign is-left" or block_type == "normalField normalField-write bizf-fields-textalign is-left" or block_type == "el-autocomplete bizf-fields-textalign is-left": 
+                        fillData_Text(block, formData[normalized_text]) ## 文字、多行文字、數字、關聯性
                     elif block_type == 'el-select bizf-fields-textalign is-left':
                         fillData_dropdown(block, formData[normalized_text]) ## 下拉選單
                     elif block_type == 'el-radio-group bizf-fields-textalign is-left':
@@ -209,11 +182,8 @@ def fillForm(formData):
                     elif block_type == 'el-checkbox-group bizf-fields-textalign is-left': 
                         fillData_checkboxgroup(block, formData[normalized_text]) ## 多選
                     elif block_type == "el-date-editor el-input el-input--prefix el-input--suffix el-date-editor--date bizf-fields-textalign is-left" or block_type == "el-date-editor el-input el-input--prefix el-input--suffix el-date-editor--datetime bizf-fields-textalign is-left":
-                        fillData_dateandtime(block, formData[normalized_text]) ## 日期與時間
-                    elif block_type == 'el-autocomplete bizf-fields-textalign is-left':
-                        fillData_autocomplete(block, formData[normalized_text]) ## 關聯性       
+                        fillData_dateandtime(block, formData[normalized_text]) ## 日期與時間      
         except Exception as e:
-            print(e)
             break
 
     
@@ -221,32 +191,22 @@ def fillForm(formData):
     while idy > 0:
         try:
             idy += 1
-            element_1 = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="FormEditor"]/div/main/div/div/div[%d]' % idy)))
+            element_1 = shortwait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="FormEditor"]/div/main/div/div/div[%d]' % idy)))
             element_1_text = element_1.find_element(By.XPATH, ".").text.strip()
             normalized_1_text = element_1_text.splitlines()[0].strip()
 
             if normalized_1_text in formData.keys():
-                block_1 = None
-                block_1_type = None
-
-                try:
-                    block_1 = element_1.find_element(By.XPATH, './div[2]/form/div/input[@class="react-autosuggest__input"]')
-                    block_1_type = "標籤"
-                except NoSuchElementException:
-                    pass
-
-
-                if block_1_type == "標籤":
-                    fillData_tag(block_1, formData[normalized_1_text])
+                block_1 = element_1.find_element(By.XPATH, './div[2]/form/div/input[@class="react-autosuggest__input"]')#標籤
+                fillData_tag(block_1, formData[normalized_1_text])
             else:
                 continue  
         except Exception as e:
-            print(e)
             break
+
 
     while True:
         try:
-            element_2 = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="FormEditor"]/div/div/div/div/div[3]')))
+            element_2 = shortwait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="FormEditor"]/div/div/div/div/div[3]')))
             element_2_text = element_2.find_element(By.XPATH, ".").text.strip()
             lines = element_2_text.splitlines() # 將 element_2_text 轉換為多行文本
             filtered_lines = list(filter(lambda x: '第' in x and '關' in x, lines)) # 過濾出包含 "第" 和 "關" 的行
@@ -260,7 +220,6 @@ def fillForm(formData):
                 fillData_people(block_2, formData['第%d關' %int(number)], idx)
             break
         except Exception as e:
-            print(e)
             break
             
 
